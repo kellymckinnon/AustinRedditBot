@@ -39,15 +39,22 @@ def createTweets(subreddit_name):
 
 	return posts, ids
 
+def shorten(url):
+	headers = {'content-type': 'application/json'}
+	payload = {"longUrl": url}
+	url = "https://www.googleapis.com/urlshortener/v1/url"
+	r = requests.post(url, data=json.dumps(payload), headers=headers)
+	return json.loads(r.text)['id']
+	
 # checks if post is a duplicate; if so, it won't be posted
 # (twitter doesn't support multiple posts with the same text)
 def isDuplicate(id):
 	with open('posts.txt', 'r') as file:
 		for line in file:
 			if id in line:
-				return true #yes, duplicate
+				return True #yes, duplicate
 
-	return false #no, post away
+	return False #no, post away
 
 # tweets all non-duplicate posts in list
 def tweetPosts(posts, ids):
@@ -55,17 +62,18 @@ def tweetPosts(posts, ids):
 	auth.set_access_token(accessToken, accessTokenSecret)
 	api = tweepy.API(auth)
 	for post, id in zip(posts, ids):
-		if isDuplicate(id):
+		if not isDuplicate(id):
 			api.update_status(post+" "+posts[post]+" #austin #reddit #bot")
 			with open('posts.txt', 'a') as file:
 				file.write(str(id) + "\n")
 			time.sleep(30)
-			print "[bot] Posted:" + post+" "posts[post]
+			print "[bot] Posted:" + post+" "+posts[post]
 		else:
 			print "[bot] duplicate post"
 
 def main():
-	tweetPosts(createPosts(SUBREDDIT))
+	posts, ids = createTweets(SUBREDDIT)
+	tweetPosts(posts, ids)
 
 if __name__ == '__main__':
 	main()
