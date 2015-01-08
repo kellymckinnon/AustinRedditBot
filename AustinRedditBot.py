@@ -33,18 +33,25 @@ def createTweets(subreddit_name):
 	#shorten urls with goo.gl
 	for post in posts:
 		link = posts[post]
-		posts[post] = shorten(link)
+		data = shorten(link)
+		if (data is not None):
+			posts[post] = shorten(link)
 
 	print "links shortened"
 
 	return posts, ids
 
 def shorten(url):
+	post_url = 'https://www.googleapis.com/urlshortener/v1/url'
+	payload = {'longUrl': url}
 	headers = {'content-type': 'application/json'}
-	payload = {"longUrl": url}
-	url = "https://www.googleapis.com/urlshortener/v1/url"
-	r = requests.post(url, data=json.dumps(payload), headers=headers)
-	return json.loads(r.text)['id']
+	r = requests.post(post_url, data=json.dumps(payload), headers=headers)
+	data = json.loads(r.text)
+	try:
+		print data['id']
+		return json.loads(r.text)['id']
+	except Exception, e:
+   		return None
 	
 # checks if post is a duplicate; if so, it won't be posted
 # (twitter doesn't support multiple posts with the same text)
@@ -62,6 +69,8 @@ def tweetPosts(posts, ids):
 	auth.set_access_token(accessToken, accessTokenSecret)
 	api = tweepy.API(auth)
 	for post, id in zip(posts, ids):
+		print post
+		print posts[post]
 		if not isDuplicate(id):
 			api.update_status(post+" "+posts[post]+" #austin #reddit #bot")
 			with open('posts.txt', 'a') as file:
